@@ -34,12 +34,12 @@ function AssetsPage() {
         <p className="eyebrow">Data</p>
         <h1>Assets</h1>
         <p className="lede">
-          This route pulls asset data from the API client. Configure <code>VITE_API_BASE_URL</code> to
-          point at your backend.
+          Denne rute henter asset-data fra API-klienten. Angiv <code>VITE_API_BASE_URL</code> til din
+          backend.
         </p>
       </header>
 
-      {status === "loading" && <p className="callout">Loading assets…</p>}
+      {status === "loading" && <p className="callout">Henter assets…</p>}
       {error && (
         <p className="callout callout--warning">
           {error.message}
@@ -50,13 +50,13 @@ function AssetsPage() {
       <div className="table">
         <div className="table__head">
           <span>ID</span>
-          <span>Name</span>
-          <span>Owner</span>
+          <span>Navn</span>
+          <span>Ejer</span>
           <span>Status</span>
         </div>
         <div className="table__body">
           {assets.length === 0 && (
-            <div className="table__row table__row--muted">No assets found.</div>
+            <div className="table__row table__row--muted">Ingen assets fundet.</div>
           )}
           {assets.map((asset) => (
             <div className="table__row" key={asset.id}>

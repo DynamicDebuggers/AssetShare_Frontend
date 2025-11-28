@@ -5,7 +5,7 @@ function BookingPage() {
     <ResourceConsole
       resourceName="Booking"
       title="Booking"
-      description="Test Booking endpoints: list all, fetch by id, create, update, and delete."
+      description="Test Booking-endepunkter: hent alle, hent via id, opret, opdater og slet."
     />
   );
 }
