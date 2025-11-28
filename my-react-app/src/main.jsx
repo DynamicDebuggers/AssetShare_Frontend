@@ -1,19 +1,11 @@
-import { createRoot } from 'react-dom/client'
-
-const myelement = (
-  <table>
-    <tr>
-      <th>Name</th>
-    </tr>
-    <tr>
-      <td>John</td>
-    </tr>
-    <tr>
-      <td>Elsa</td>
-    </tr>
-  </table>
-);
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
+import './index.css';
 
 createRoot(document.getElementById('root')).render(
-  myelement
-)
+  <StrictMode>
+    <RouterProvider router={router} />
+  </StrictMode>
+);
