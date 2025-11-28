@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 function NotFoundPage() {
   return (
     <section className="page page--centered">
-      <h1>Page not found</h1>
-      <p className="lede">The route you tried to reach does not exist.</p>
+      <h1>Siden blev ikke fundet</h1>
+      <p className="lede">Den rute, du prøvede at åbne, findes ikke.</p>
       <Link className="button" to="/">
-        Back home
+        Til forsiden
       </Link>
     </section>
   );

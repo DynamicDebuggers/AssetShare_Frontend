@@ -5,7 +5,7 @@ function MachinePage() {
     <ResourceConsole
       resourceName="Machine"
       title="Machine"
-      description="Interact with Machine endpoints (list, get by id, create, update, delete)."
+      description="Brug Machine-endepunkterne (hent, hent via id, opret, opdater, slet)."
     />
   );
 }

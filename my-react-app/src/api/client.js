@@ -15,9 +15,18 @@ async function request(path, { method = 'GET', body, headers = {}, signal } = {}
   });
 
   const contentType = response.headers.get('content-type') || '';
-  const payload = contentType.includes('application/json')
-    ? await response.json()
-    : await response.text();
+  let payload;
+
+  if (contentType.includes('application/json')) {
+    payload = await response.json();
+  } else {
+    const text = await response.text();
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = text;
+    }
+  }
 
   if (!response.ok) {
     const error = new Error(
@@ -35,11 +44,11 @@ async function request(path, { method = 'GET', body, headers = {}, signal } = {}
 
 function toApiError(error) {
   if (error.name === 'AbortError') {
-    return { message: 'Request was aborted.' };
+    return { message: 'Anmodning blev afbrudt.', aborted: true };
   }
 
   return {
-    message: error.message || 'Request failed.',
+    message: error.message || 'Anmodning fejlede.',
     status: error.status || null,
     details: error.body || null,
   };

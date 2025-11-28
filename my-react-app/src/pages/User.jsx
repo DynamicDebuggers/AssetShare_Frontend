@@ -5,7 +5,7 @@ function UserPage() {
     <ResourceConsole
       resourceName="User"
       title="User"
-      description="Run CRUD calls against User endpoints with simple forms below."
+      description="Kør CRUD-kald mod User-endepunkter med de simple formularer herunder."
     />
   );
 }
