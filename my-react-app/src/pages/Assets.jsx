@@ -1,33 +1,27 @@
-import { useEffect, useState } from 'react';
-import { listAssets } from '../api/client';
-
-const demoAssets = [
-  { id: 'demo-1', name: 'Brand Guidelines.pdf', owner: 'Design', status: 'Published' },
-  { id: 'demo-2', name: 'Product Shots.zip', owner: 'Marketing', status: 'Draft' },
-  { id: 'demo-3', name: 'Launch Video.mp4', owner: 'Video', status: 'Published' },
-];
+import { useEffect, useState } from "react";
+import { listAssets } from "../api/client";
 
 function AssetsPage() {
   const [assets, setAssets] = useState([]);
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState("idle");
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
 
     async function loadAssets() {
-      setStatus('loading');
+      setStatus("loading");
       const { data, error: requestError } = await listAssets(controller.signal);
 
       if (requestError) {
         setError(requestError);
-        setAssets(demoAssets);
-        setStatus('error');
+        setAssets([]);
+        setStatus("error");
         return;
       }
 
       setAssets(Array.isArray(data) ? data : []);
-      setStatus('success');
+      setStatus("success");
     }
 
     loadAssets();
@@ -40,16 +34,16 @@ function AssetsPage() {
         <p className="eyebrow">Data</p>
         <h1>Assets</h1>
         <p className="lede">
-          This route pulls asset data from the API client. Configure{' '}
-          <code>VITE_API_BASE_URL</code> to point at your backend.
+          This route pulls asset data from the API client. Configure <code>VITE_API_BASE_URL</code> to
+          point at your backend.
         </p>
       </header>
 
-      {status === 'loading' && <p className="callout">Loading assetsâ€¦</p>}
+      {status === "loading" && <p className="callout">Loading assets…</p>}
       {error && (
         <p className="callout callout--warning">
           {error.message}
-          {error.status ? ` (HTTP ${error.status})` : ''}. Showing demo data.
+          {error.status ? ` (HTTP ${error.status})` : ""}.
         </p>
       )}
 
