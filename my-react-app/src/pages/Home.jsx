@@ -1,40 +1,83 @@
+import { useEffect, useState } from 'react';
+import { listResource } from '../api/client';
+
 function HomePage() {
+  const [listings, setListings] = useState([]);
+  const [status, setStatus] = useState('idle');
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadListings() {
+      setStatus('loading');
+      const { data, error: requestError } = await listResource('Listing', controller.signal);
+      if (requestError) {
+        setError(requestError);
+        setListings([]);
+        setStatus('error');
+        return;
+      }
+      setListings(Array.isArray(data) ? data : []);
+      setStatus('success');
+    }
+
+    loadListings();
+    return () => controller.abort();
+  }, []);
+
   return (
     <section className="page">
       <header className="page__header">
         <p className="eyebrow">Dashboard</p>
-        <h1>AssetShare Frontend</h1>
+        <h1>Open Listings</h1>
         <p className="lede">
-          A simple shell for browsing assets, wiring API calls, and adding new features.
-          Use the navigation to explore routes.
+          Live data from the Listing endpoint. Use this page as the entry point for your crew to
+          see what work is available.
         </p>
       </header>
 
-      <div className="panel-grid">
-        <article className="panel">
-          <h2>Routing</h2>
-          <p>
-            Pages are controlled by the router in <code>src/router.jsx</code> using a shared
-            layout, so you can drop in new pages quickly.
-          </p>
-        </article>
+      {status === 'loading' && <p className="callout">Loading listings…</p>}
+      {error && (
+        <p className="callout callout--warning">
+          {error.message}
+          {error.status ? ` (HTTP ${error.status})` : ''}. Check your API base URL.
+        </p>
+      )}
 
-        <article className="panel">
-          <h2>API client</h2>
-          <p>
-            Centralize network calls in <code>src/api/client.js</code>. Configure the base URL
-            with <code>VITE_API_BASE_URL</code>.
-          </p>
-        </article>
+      <div className="listing-grid">
+        {listings.length === 0 && status === 'success' && (
+          <div className="panel">
+            <h2>No listings found</h2>
+            <p className="muted">Create a listing to populate this dashboard.</p>
+          </div>
+        )}
 
-        <article className="panel">
-          <h2>Next steps</h2>
-          <ul>
-            <li>Hook real data into the Assets page</li>
-            <li>Add authentication and protected routes</li>
-            <li>Drop in design system components</li>
-          </ul>
-        </article>
+        {listings.map((listing) => (
+          <article className="panel listing-card" key={listing.id || listing.name}>
+            <div className="panel__header">
+              <span className="tag">Listing</span>
+              <strong>{listing.title || listing.name || 'Untitled'}</strong>
+            </div>
+            <p className="muted">
+              {listing.description || listing.summary || 'No description provided.'}
+            </p>
+            <div className="listing-meta">
+              <div>
+                <p className="meta-label">ID</p>
+                <p className="meta-value">{listing.id || '—'}</p>
+              </div>
+              <div>
+                <p className="meta-label">Status</p>
+                <p className="meta-value pill pill--muted">{listing.status || 'Unknown'}</p>
+              </div>
+              <div>
+                <p className="meta-label">Owner</p>
+                <p className="meta-value">{listing.owner || listing.createdBy || 'Unassigned'}</p>
+              </div>
+            </div>
+          </article>
+        ))}
       </div>
     </section>
   );
