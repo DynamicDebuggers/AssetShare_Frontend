@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import './App.css';
 
 const AUTH_STORAGE_KEY = 'assetshare_isLoggedIn';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const stored = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -16,12 +17,22 @@ function App() {
     localStorage.setItem(AUTH_STORAGE_KEY, String(loggedIn));
   }, [loggedIn]);
 
-  function handleAuthClick() {
-    setLoggedIn((prev) => !prev);
+  function handleLogin() {
+    setLoggedIn(true);
   }
 
-  const authLabel = loggedIn ? 'Profil' : 'Opret bruger';
-  const authHelper = loggedIn ? 'Se eller opdater din profil' : 'Opret en konto og kom i gang';
+  function handleLogout() {
+    setLoggedIn(false);
+  }
+
+  function handleCreateUser() {
+    navigate('/opret-bruger');
+  }
+
+  const authLabel = loggedIn ? 'Profil' : 'Log ind eller opret';
+  const authHelper = loggedIn
+    ? 'Du er logget ind. Se eller opdater din profil.'
+    : 'Log ind hvis du har en konto, eller opret en bruger hvis du er ny.';
 
   return (
     <div className="app-shell">
@@ -41,9 +52,14 @@ function App() {
             <strong>{authLabel}</strong>
             <span className="muted">{authHelper}</span>
           </div>
-          <button className="button" onClick={handleAuthClick}>
-            {loggedIn ? 'Skift bruger (log ud)' : 'Opret bruger'}
-          </button>
+          <div className="auth-card__actions">
+            <button className="button" onClick={loggedIn ? handleLogout : handleLogin}>
+              {loggedIn ? 'Log ud' : 'Log ind'}
+            </button>
+            <button className="button" onClick={handleCreateUser}>
+              Opret bruger
+            </button>
+          </div>
         </div>
       </aside>
 

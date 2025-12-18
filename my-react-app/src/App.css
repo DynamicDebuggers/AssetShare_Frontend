@@ -55,6 +55,11 @@
   gap: 0.2rem;
 }
 
+.auth-card__actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .nav__link {
   padding: 0.65rem 0.9rem;
   border-radius: 0.6rem;
@@ -230,7 +235,8 @@
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(245, 196, 0, 0.25);
@@ -241,12 +247,23 @@ textarea {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: 2px solid rgba(245, 196, 0, 0.65);
 }
 
 textarea {
   resize: vertical;
+}
+
+select {
+  appearance: none;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+select option {
+  background: #111111;
+  color: #f6f6f6;
 }
 
 .result {
