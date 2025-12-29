@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { listResource } from '../api/client';
 
 function HomePage() {
@@ -50,6 +51,11 @@ function HomePage() {
           Live data fra Listing-endepunktet. Brug siden som startpunkt for holdet til at se ledige
           opgaver.
         </p>
+        <div style={{ marginTop: '1rem' }}>
+          <Link to="/listings" className="button">
+            Administrer annoncer
+          </Link>
+        </div>
       </header>
 
       {status === 'loading' && <p className="callout">Henter opslag…</p>}

@@ -341,11 +341,48 @@ textarea {
   font-weight: 700;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease;
+  font: inherit;
 }
 
 .button:hover {
   transform: translateY(-1px);
   box-shadow: 0 12px 28px rgba(245, 196, 0, 0.35);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.button--small {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.9rem;
+}
+
+.button--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 196, 0, 0.3);
+  color: #f6f6f6;
+}
+
+.button--secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.button--danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #ffffff;
+}
+
+.button--danger:hover {
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.35);
+}
+
+a.button {
+  text-decoration: none;
 }
 
 .listing-grid {
