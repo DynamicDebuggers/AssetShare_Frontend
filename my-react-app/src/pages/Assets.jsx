@@ -39,7 +39,7 @@ function AssetsPage() {
         </p>
       </header>
 
-      {status === "loading" && <p className="callout">Henter assets…</p>}
+      {status === "loading" && <p className="callout">Henter assetsâ€¦</p>}
       {error && (
         <p className="callout callout--warning">
           {error.message}

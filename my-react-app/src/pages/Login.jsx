@@ -1,36 +1,19 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { registerUser } from '../api/client';
+import { Link, useNavigate } from 'react-router-dom';
+import { loginUser } from '../api/client';
 
 const INITIAL_FORM = {
-  firstName: '',
-  lastName: '',
   email: '',
   password: '',
 };
 
-function buildRegisterPayload(form) {
-  return Object.entries({
-    firstName: form.firstName.trim(),
-    lastName: form.lastName.trim(),
-    email: form.email.trim(),
-    password: form.password,
-  }).reduce((payload, [key, value]) => {
-    if (value !== undefined && value !== '') {
-      payload[key] = value;
-    }
-    return payload;
-  }, {});
-}
-
-function CreateUserPage() {
+function LoginPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const navigate = useNavigate();
 
-  const hasRequiredFields = Boolean(
-    form.firstName.trim() && form.lastName.trim() && form.email.trim() && form.password
-  );
+  const hasRequiredFields = Boolean(form.email.trim() && form.password);
 
   function updateField(field) {
     return (event) => {
@@ -42,18 +25,17 @@ function CreateUserPage() {
     event.preventDefault();
 
     if (!hasRequiredFields) {
-      setResult({
-        error: {
-          message: 'Fornavn, efternavn, e-mail og adgangskode er paakraevet.',
-        },
-      });
+      setResult({ error: { message: 'E-mail og adgangskode er paakraevet.' } });
       return;
     }
 
     setSubmitting(true);
     setResult(null);
 
-    const { data, error } = await registerUser(buildRegisterPayload(form));
+    const { data, error } = await loginUser({
+      email: form.email.trim(),
+      password: form.password,
+    });
     if (error) {
       setResult({ error });
       setSubmitting(false);
@@ -61,38 +43,21 @@ function CreateUserPage() {
     }
 
     setResult({ data });
-    setForm(INITIAL_FORM);
+    setForm({ ...INITIAL_FORM, email: form.email.trim() });
     setSubmitting(false);
+    navigate('/');
   }
 
   return (
     <section className="page">
       <header className="page__header">
-        <p className="eyebrow">Opret bruger</p>
-        <h1>Opret en ny bruger</h1>
+        <p className="eyebrow">Log ind</p>
+        <h1>Log ind på din konto</h1>
       </header>
 
       <div className="panel-grid">
         <div className="panel">
           <form className="field" onSubmit={handleSubmit}>
-            <label className="field">
-              <span>Fornavn</span>
-              <input
-                type="text"
-                value={form.firstName}
-                onChange={updateField('firstName')}
-                autoComplete="given-name"
-              />
-            </label>
-            <label className="field">
-              <span>Efternavn</span>
-              <input
-                type="text"
-                value={form.lastName}
-                onChange={updateField('lastName')}
-                autoComplete="family-name"
-              />
-            </label>
             <label className="field">
               <span>E-mail</span>
               <input
@@ -108,17 +73,17 @@ function CreateUserPage() {
                 type="password"
                 value={form.password}
                 onChange={updateField('password')}
-                autoComplete="new-password"
+                autoComplete="current-password"
               />
             </label>
 
             <button className="button" type="submit" disabled={!hasRequiredFields || submitting}>
-              {submitting ? 'Opretter.' : 'Opret bruger'}
+              {submitting ? 'Logger ind.' : 'Log ind'}
             </button>
           </form>
 
           <p className="muted" style={{ marginTop: '0.75rem' }}>
-            <Link to="/login">Er du allerede bruger?</Link>
+            <Link to="/opret-bruger">Har du ikke en bruger?</Link>
           </p>
 
           {result?.error ? (
@@ -128,11 +93,11 @@ function CreateUserPage() {
             </div>
           ) : null}
 
-          {result?.data ? <div className="callout">Bruger oprettet.</div> : null}
+          {result?.data ? null : null}
         </div>
       </div>
     </section>
   );
 }
 
-export default CreateUserPage;
+export default LoginPage;

@@ -1,28 +1,45 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { clearStoredToken, getStoredToken, logoutUser } from './api/client';
 import './App.css';
 
-const AUTH_STORAGE_KEY = 'assetshare_isLoggedIn';
-
 function App() {
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(Boolean(getStoredToken()));
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    setLoggedIn(stored === 'true');
+    setLoggedIn(Boolean(getStoredToken()));
+  }, [location.pathname]);
+
+  useEffect(() => {
+    function handleStorage() {
+      setLoggedIn(Boolean(getStoredToken()));
+    }
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(AUTH_STORAGE_KEY, String(loggedIn));
-  }, [loggedIn]);
-
   function handleLogin() {
-    setLoggedIn(true);
+    navigate('/login');
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    const { error } = await logoutUser();
+    if (error) {
+      clearStoredToken();
+    }
     setLoggedIn(false);
+    navigate('/');
+  }
+
+  function handleProfile() {
+    navigate('/user');
+  }
+
+  function handleListings() {
+    navigate('/listings');
   }
 
   function handleCreateUser() {
@@ -45,6 +62,14 @@ function App() {
           <NavLink className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`} to="/">
             Forside
           </NavLink>
+          {loggedIn ? (
+            <NavLink
+              className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}
+              to="/listings"
+            >
+              Se annoncer
+            </NavLink>
+          ) : null}
         </nav>
 
         <div className="auth-card">
@@ -53,12 +78,25 @@ function App() {
             <span className="muted">{authHelper}</span>
           </div>
           <div className="auth-card__actions">
-            <button className="button" onClick={loggedIn ? handleLogout : handleLogin}>
-              {loggedIn ? 'Log ud' : 'Log ind'}
-            </button>
-            <button className="button" onClick={handleCreateUser}>
-              Opret bruger
-            </button>
+            {loggedIn ? (
+              <>
+                <button className="button" onClick={handleProfile}>
+                  Profil
+                </button>
+                <button className="button" onClick={handleLogout}>
+                  Log ud
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="button" onClick={handleLogin}>
+                  Log ind
+                </button>
+                <button className="button" onClick={handleCreateUser}>
+                  Opret bruger
+                </button>
+              </>
+            )}
           </div>
         </div>
       </aside>

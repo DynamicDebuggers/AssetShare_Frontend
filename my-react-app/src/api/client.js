@@ -2,6 +2,48 @@ const DEFAULT_API_BASE_URL =
   'https://assetshareapi-a8c6f5abbfg9ftbw.northeurope-01.azurewebsites.net/api';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+const AUTH_TOKEN_STORAGE_KEY = 'assetshare_auth_token';
+const AUTH_USER_ID_STORAGE_KEY = 'assetshare_user_id';
+
+export function getStoredToken() {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+}
+
+export function getStoredUserId() {
+  if (typeof localStorage === 'undefined') return null;
+  const value = localStorage.getItem(AUTH_USER_ID_STORAGE_KEY);
+  return value ? Number(value) : null;
+}
+
+function setStoredToken(token) {
+  if (typeof localStorage === 'undefined') return;
+  if (token) {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  }
+}
+
+function setStoredUserId(userId) {
+  if (typeof localStorage === 'undefined') return;
+  if (userId === null || userId === undefined || Number.isNaN(Number(userId))) {
+    localStorage.removeItem(AUTH_USER_ID_STORAGE_KEY);
+    return;
+  }
+  localStorage.setItem(AUTH_USER_ID_STORAGE_KEY, String(userId));
+}
+
+export function clearStoredToken() {
+  setStoredToken(null);
+  setStoredUserId(null);
+}
+
+function getAuthHeaders() {
+  const token = getStoredToken();
+  if (!token) return {};
+  return { Authorization: `Bearer ${token}` };
+}
 
 async function request(path, { method = 'GET', body, headers = {}, signal } = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -9,6 +51,7 @@ async function request(path, { method = 'GET', body, headers = {}, signal } = {}
     signal,
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...getAuthHeaders(),
       ...headers,
     },
     body: body ? JSON.stringify(body) : undefined,
@@ -121,6 +164,55 @@ export async function updateResource(resource, id, payload) {
 export async function deleteResource(resource, id) {
   try {
     const data = await request(`/${resource}/${id}`, { method: 'DELETE' });
+    return { data };
+  } catch (error) {
+    return { error: toApiError(error) };
+  }
+}
+
+export async function registerUser(payload) {
+  try {
+    const data = await request('/Auth/register', { method: 'POST', body: payload });
+    if (data && typeof data === 'object' && 'token' in data) {
+      setStoredToken(data.token);
+    }
+    if (data && typeof data === 'object' && 'userId' in data) {
+      setStoredUserId(data.userId);
+    }
+    return { data };
+  } catch (error) {
+    return { error: toApiError(error) };
+  }
+}
+
+export async function loginUser(payload) {
+  try {
+    const data = await request('/Auth/login', { method: 'POST', body: payload });
+    if (data && typeof data === 'object' && 'token' in data) {
+      setStoredToken(data.token);
+    }
+    if (data && typeof data === 'object' && 'userId' in data) {
+      setStoredUserId(data.userId);
+    }
+    return { data };
+  } catch (error) {
+    return { error: toApiError(error) };
+  }
+}
+
+export async function getCurrentUser(signal) {
+  try {
+    const data = await request('/Auth/me', { signal });
+    return { data };
+  } catch (error) {
+    return { error: toApiError(error) };
+  }
+}
+
+export async function logoutUser() {
+  try {
+    const data = await request('/Auth/logout', { method: 'POST' });
+    clearStoredToken();
     return { data };
   } catch (error) {
     return { error: toApiError(error) };

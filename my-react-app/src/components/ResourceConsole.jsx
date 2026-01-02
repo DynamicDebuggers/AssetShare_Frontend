@@ -121,7 +121,7 @@ function ResourceConsole({ resourceName, title, description }) {
           </div>
           <p className="muted">GET {resourcePath}</p>
           <button className="button" onClick={handleList} disabled={loadingAction === "list"}>
-            {loadingAction === "list" ? "Henter…" : "Hent"}
+            {loadingAction === "list" ? "Henterâ€¦" : "Hent"}
           </button>
         </div>
 
@@ -139,7 +139,7 @@ function ResourceConsole({ resourceName, title, description }) {
               onChange={(e) => setIdInput(e.target.value)}
             />
             <button className="button" type="submit" disabled={loadingAction === "get"}>
-              {loadingAction === "get" ? "Henter…" : "Hent"}
+              {loadingAction === "get" ? "Henterâ€¦" : "Hent"}
             </button>
           </form>
         </div>
@@ -158,7 +158,7 @@ function ResourceConsole({ resourceName, title, description }) {
               placeholder='{"name":"value"}'
             />
             <button className="button" type="submit" disabled={loadingAction === "create"}>
-              {loadingAction === "create" ? "Sender…" : "Send"}
+              {loadingAction === "create" ? "Senderâ€¦" : "Send"}
             </button>
           </form>
         </div>
@@ -183,7 +183,7 @@ function ResourceConsole({ resourceName, title, description }) {
               placeholder='{"name":"updated"}'
             />
             <button className="button" type="submit" disabled={loadingAction === "update"}>
-              {loadingAction === "update" ? "Opdaterer…" : "Opdater"}
+              {loadingAction === "update" ? "Opdatererâ€¦" : "Opdater"}
             </button>
           </form>
         </div>
@@ -202,7 +202,7 @@ function ResourceConsole({ resourceName, title, description }) {
               onChange={(e) => setIdInput(e.target.value)}
             />
             <button className="button" type="submit" disabled={loadingAction === "delete"}>
-              {loadingAction === "delete" ? "Sletter…" : "Slet"}
+              {loadingAction === "delete" ? "Sletterâ€¦" : "Slet"}
             </button>
           </form>
         </div>
