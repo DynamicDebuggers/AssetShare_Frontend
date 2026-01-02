@@ -1,7 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
-import CreateUserPage from './pages/CreateUser';
 import HomePage from './pages/Home';
+import ListingPage from './pages/Listing';
 import NotFoundPage from './pages/NotFound';
 
 export const router = createBrowserRouter([
@@ -10,7 +10,7 @@ export const router = createBrowserRouter([
     element: <App />,
     children: [
       { index: true, element: <HomePage /> },
-      { path: 'opret-bruger', element: <CreateUserPage /> },
+      { path: 'listings', element: <ListingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
