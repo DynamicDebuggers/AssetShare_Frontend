@@ -124,6 +124,13 @@
   gap: 0.4rem;
 }
 
+.search-bar {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 640px;
+  margin-top: 0.5rem;
+}
+
 .eyebrow {
   font-size: 0.85rem;
   letter-spacing: 0.1em;
@@ -410,6 +417,15 @@ a.button {
 
 .listing-card {
   border-left: 4px solid #f5c400;
+}
+
+.listing-card-link {
+  display: grid;
+  text-decoration: none;
+}
+
+.listing-title-link {
+  font-weight: 700;
 }
 
 .listing-meta {

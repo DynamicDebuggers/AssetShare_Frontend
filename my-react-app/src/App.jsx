@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { clearStoredToken, getStoredToken, logoutUser } from './api/client';
+import {
+  clearStoredToken,
+  getStoredToken,
+  isStoredTokenExpired,
+  logoutUser,
+  validateSession,
+} from './api/client';
 import './App.css';
 
 function App() {
@@ -9,16 +15,45 @@ function App() {
   const location = useLocation();
 
   useEffect(() => {
+    if (isStoredTokenExpired()) {
+      clearStoredToken();
+      setLoggedIn(false);
+      return;
+    }
     setLoggedIn(Boolean(getStoredToken()));
   }, [location.pathname]);
 
   useEffect(() => {
     function handleStorage() {
+      if (isStoredTokenExpired()) {
+        clearStoredToken();
+        setLoggedIn(false);
+        return;
+      }
       setLoggedIn(Boolean(getStoredToken()));
     }
 
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function checkSession() {
+      const result = await validateSession();
+      if (active) {
+        setLoggedIn(result.ok);
+      }
+    }
+
+    if (getStoredToken()) {
+      checkSession();
+    }
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   function handleLogin() {

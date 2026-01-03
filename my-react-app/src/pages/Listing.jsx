@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { listResource, createResource, updateResource, deleteResource } from '../api/client';
 
 function ListingPage() {
@@ -229,13 +230,21 @@ function ListingPage() {
           <article className="panel listing-card" key={listing.id}>
             <div className="panel__header">
               <span className="tag">#{listing.id}</span>
-              <strong>{listing.title || 'Untitled'}</strong>
+              <Link className="listing-title-link" to={`/listings/${listing.id}`}>
+                {listing.title || 'Untitled'}
+              </Link>
             </div>
             <p className="muted">{listing.description || 'Ingen beskrivelse'}</p>
             <div className="listing-meta">
               <div>
                 <p className="meta-label">Maskine</p>
-                <p className="meta-value">{listing.machineId ?? '—'}</p>
+                <p className="meta-value">
+                  {listing.machineId != null ? (
+                    <Link to={`/machines/${listing.machineId}`}>{listing.machineId}</Link>
+                  ) : (
+                    '—'
+                  )}
+                </p>
               </div>
               <div>
                 <p className="meta-label">Ejer</p>

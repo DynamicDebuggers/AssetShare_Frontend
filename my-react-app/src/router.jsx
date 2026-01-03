@@ -1,15 +1,21 @@
 import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom';
 import App from './App';
-import { getStoredToken } from './api/client';
+import { clearStoredToken, getStoredToken, isStoredTokenExpired } from './api/client';
 import HomePage from './pages/Home';
 import CreateUserPage from './pages/CreateUser';
 import LoginPage from './pages/Login';
 import ListingPage from './pages/Listing';
+import ListingDetailPage from './pages/ListingDetail';
+import MachineDetailPage from './pages/MachineDetail';
 import UserPage from './pages/User';
 import NotFoundPage from './pages/NotFound';
 
 function RequireAuth({ children }) {
   const location = useLocation();
+  if (isStoredTokenExpired()) {
+    clearStoredToken();
+  }
+
   const isLoggedIn = Boolean(getStoredToken());
   const publicPaths = ['/', '/login', '/opret-bruger'];
 
@@ -33,6 +39,8 @@ export const router = createBrowserRouter([
       { path: 'opret-bruger', element: <CreateUserPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'listings', element: <ListingPage /> },
+      { path: 'listings/:id', element: <ListingDetailPage /> },
+      { path: 'machines/:id', element: <MachineDetailPage /> },
       { path: 'user', element: <UserPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

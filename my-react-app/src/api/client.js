@@ -45,6 +45,32 @@ function getAuthHeaders() {
   return { Authorization: `Bearer ${token}` };
 }
 
+function decodeJwtPayload(token) {
+  if (!token) return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  try {
+    return JSON.parse(atob(`${base64}${padding}`));
+  } catch {
+    return null;
+  }
+}
+
+function isTokenExpired(token, skewSeconds = 30) {
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== 'number') return false;
+  const now = Math.floor(Date.now() / 1000);
+  return now >= payload.exp - skewSeconds;
+}
+
+export function isStoredTokenExpired() {
+  const token = getStoredToken();
+  if (!token) return true;
+  return isTokenExpired(token);
+}
+
 async function request(path, { method = 'GET', body, headers = {}, signal } = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -206,6 +232,27 @@ export async function getCurrentUser(signal) {
     return { data };
   } catch (error) {
     return { error: toApiError(error) };
+  }
+}
+
+export async function validateSession(signal) {
+  const token = getStoredToken();
+  if (!token) return { ok: false, reason: 'missing' };
+
+  if (isTokenExpired(token)) {
+    clearStoredToken();
+    return { ok: false, reason: 'expired' };
+  }
+
+  try {
+    await request('/Auth/me', { signal });
+    return { ok: true };
+  } catch (error) {
+    const apiError = toApiError(error);
+    if (apiError.status === 401) {
+      clearStoredToken();
+    }
+    return { ok: false, reason: 'invalid', error: apiError };
   }
 }
 
