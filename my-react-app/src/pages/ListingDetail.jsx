@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { createResource, getResource, getStoredUserId } from '../api/client';
+import ReviewList from '../components/ReviewList';
+import ReviewForm from '../components/ReviewForm';
 
 function ListingDetailPage() {
   const { id } = useParams();
@@ -10,6 +12,7 @@ function ListingDetailPage() {
   const [bookingPeriod, setBookingPeriod] = useState('');
   const [bookingStatus, setBookingStatus] = useState(null);
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
+  const [refreshReviews, setRefreshReviews] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -99,6 +102,11 @@ function ListingDetailPage() {
     setBookingSubmitting(false);
   }
 
+  const handleReviewCreated = () => {
+    // Trigger a refresh of the review list
+    setRefreshReviews(prev => prev + 1);
+  };
+
   return (
     <section className="page">
       <header className="page__header">
@@ -168,6 +176,17 @@ function ListingDetailPage() {
               {bookingSubmitting ? 'Booker...' : 'Book maskine'}
             </button>
           </form>
+
+          {/* Reviews Section */}
+          <ReviewList listingId={listing.id} key={refreshReviews} />
+          
+          {userId && (
+            <ReviewForm 
+              listingId={listing.id} 
+              userId={userId}
+              onReviewCreated={handleReviewCreated}
+            />
+          )}
         </>
       )}
     </section>

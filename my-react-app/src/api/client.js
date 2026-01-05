@@ -196,6 +196,25 @@ export async function deleteResource(resource, id) {
   }
 }
 
+// Review functions
+export async function getReviewsByListing(listingId, signal) {
+  try {
+    const data = await request(`/Review/Listing/${listingId}`, { signal });
+    return { data };
+  } catch (error) {
+    return { error: toApiError(error) };
+  }
+}
+
+export async function getAverageRating(listingId, signal) {
+  try {
+    const data = await request(`/Review/Rating/${listingId}`, { signal });
+    return { data };
+  } catch (error) {
+    return { error: toApiError(error) };
+  }
+}
+
 export async function registerUser(payload) {
   try {
     const data = await request('/Auth/register', { method: 'POST', body: payload });
