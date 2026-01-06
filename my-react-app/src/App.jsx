@@ -7,6 +7,7 @@ import {
   logoutUser,
   validateSession,
 } from './api/client';
+import logo from './assets/logo.png';
 import './App.css';
 
 function App() {
@@ -91,7 +92,7 @@ function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand__dot" />
+          <img className="brand__logo" src={logo} alt="AssetShare logo" />
           <span>AssetShare</span>
         </div>
         <nav className="nav">

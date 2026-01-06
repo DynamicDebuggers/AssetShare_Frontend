@@ -143,11 +143,7 @@ function ListingDetailPage() {
                 <p className="meta-label">Sted</p>
                 <p className="meta-value">{location}</p>
               </div>
-              <div>
-                <p className="meta-label">Maskine ID</p>
-                <p className="meta-value">{machineId ?? '—'}</p>
-              </div>
-            </div>
+                          </div>
 
             {description ? <p className="muted">{description}</p> : null}
           </div>

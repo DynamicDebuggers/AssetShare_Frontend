@@ -1,5 +1,13 @@
 import { useEffect, useState } from 'react';
-import { getResource, getStoredUserId, updateResource } from '../api/client';
+import { useNavigate } from 'react-router-dom';
+import {
+  clearStoredToken,
+  deleteResource,
+  getResource,
+  getStoredUserId,
+  listResource,
+  updateResource,
+} from '../api/client';
 
 const INITIAL_FORM = {
   firstName: '',
@@ -26,6 +34,27 @@ function mapFormFromProfile(profile) {
   };
 }
 
+function formatBookingPeriod(value) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString();
+}
+
+function formatBookingStatus(value) {
+  if (typeof value === 'boolean') return value ? 'Aktiv' : 'Afsluttet';
+  if (typeof value === 'number') return value ? 'Aktiv' : 'Afsluttet';
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase().trim();
+    if (!normalized) return '-';
+    if (['true', 'active', 'open', 'booked', 'confirmed'].includes(normalized)) return 'Aktiv';
+    if (['false', 'closed', 'ended', 'inactive', 'cancelled', 'canceled'].includes(normalized))
+      return 'Afsluttet';
+    return value;
+  }
+  return '-';
+}
+
 function UserPage() {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
@@ -35,6 +64,12 @@ function UserPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [bookingStatus, setBookingStatus] = useState('idle');
+  const [bookingError, setBookingError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -79,6 +114,48 @@ function UserPage() {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    if (!userId) return;
+    const controller = new AbortController();
+
+    async function loadBookings() {
+      setBookingStatus('loading');
+      setBookingError(null);
+
+      const { data, error: requestError } = await listResource('Booking', controller.signal);
+      if (requestError) {
+        if (requestError.aborted) {
+          setBookingStatus('idle');
+          return;
+        }
+        setBookingError(requestError);
+        setBookings([]);
+        setBookingStatus('error');
+        return;
+      }
+
+      const allBookings = Array.isArray(data) ? data : [];
+      const filtered = allBookings.filter((booking) => {
+        const bookingUserId =
+          booking?.rentedByUserId ??
+          booking?.RentedByUserId ??
+          booking?.userId ??
+          booking?.UserId ??
+          booking?.renterId ??
+          booking?.RenterId ??
+          null;
+        if (bookingUserId === null || bookingUserId === undefined) return false;
+        return Number(bookingUserId) === Number(userId);
+      });
+
+      setBookings(filtered);
+      setBookingStatus('success');
+    }
+
+    loadBookings();
+    return () => controller.abort();
+  }, [userId]);
+
   function updateField(field) {
     return (event) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -88,6 +165,7 @@ function UserPage() {
   function handleToggleEdit() {
     setEditing((prev) => !prev);
     setSaveError(null);
+    setDeleteError(null);
     if (profile) {
       setForm(mapFormFromProfile(profile));
     }
@@ -111,6 +189,25 @@ function UserPage() {
     setProfile((prev) => ({ ...prev, ...(data && typeof data === 'object' ? data : payload) }));
     setEditing(false);
     setSaving(false);
+  }
+
+  async function handleDelete() {
+    if (!userId || deleting) return;
+    const confirmed = confirm('Er du sikker paa, at du vil slette din profil?');
+    if (!confirmed) return;
+
+    setDeleting(true);
+    setDeleteError(null);
+
+    const { error: deleteRequestError } = await deleteResource('User', userId);
+    if (deleteRequestError) {
+      setDeleteError(deleteRequestError);
+      setDeleting(false);
+      return;
+    }
+
+    clearStoredToken();
+    navigate('/');
   }
 
   return (
@@ -147,13 +244,91 @@ function UserPage() {
                 </p>
               </div>
             </div>
-            <button className="button button--secondary" onClick={handleToggleEdit}>
-              {editing ? 'Annuller' : 'Rediger profil'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <button className="button button--secondary" onClick={handleToggleEdit}>
+                {editing ? 'Annuller' : 'Rediger profil'}
+              </button>
+              <button className="button button--danger" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Sletter...' : 'Slet profil'}
+              </button>
+            </div>
+            {deleteError ? (
+              <div className="callout callout--warning" style={{ marginTop: '0.75rem' }}>
+                <strong>Fejl:</strong> {deleteError.message}
+                {deleteError.status ? ` (HTTP ${deleteError.status})` : ''}
+              </div>
+          ) : null}
+        </div>
+
+        <div className="panel">
+          <div className="panel__header">
+            <strong>Dine bookinger</strong>
           </div>
 
-          {editing ? (
-            <form className="panel field" onSubmit={handleSave}>
+          {bookingStatus === 'loading' && <p className="muted">Henter bookinger...</p>}
+          {bookingError ? (
+            <div className="callout callout--warning">
+              <strong>Fejl:</strong> {bookingError.message}
+              {bookingError.status ? ` (HTTP ${bookingError.status})` : ''}
+            </div>
+          ) : null}
+
+          {bookingStatus === 'success' && bookings.length === 0 ? (
+            <p className="muted">Ingen bookinger fundet.</p>
+          ) : null}
+
+          {bookings.length > 0 ? (
+            <div className="table table--bookings">
+              <div className="table__head">
+                <span>Periode</span>
+                <span>Maskine</span>
+                <span>Status</span>
+              </div>
+              <div className="table__body">
+                {bookings.map((booking, index) => {
+                  const period =
+                    booking?.period ??
+                    booking?.Period ??
+                    booking?.startDate ??
+                    booking?.StartDate ??
+                    booking?.startTime ??
+                    booking?.StartTime ??
+                    null;
+                  const machine =
+                    booking?.bookedMachineId ??
+                    booking?.BookedMachineId ??
+                    booking?.bookedMachineID ??
+                    booking?.machineId ??
+                    booking?.MachineId ??
+                    booking?.MachineID ??
+                    null;
+                  const statusValue =
+                    booking?.status ??
+                    booking?.Status ??
+                    booking?.isActive ??
+                    booking?.active ??
+                    null;
+                  const bookingKey =
+                    booking?.id ??
+                    booking?.bookingId ??
+                    booking?.BookingId ??
+                    `${machine ?? 'booking'}-${index}`;
+
+                  return (
+                    <div className="table__row" key={bookingKey}>
+                      <span>{formatBookingPeriod(period)}</span>
+                      <span>{machine ?? '-'}</span>
+                      <span className="pill">{formatBookingStatus(statusValue)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {editing ? (
+          <form className="panel field" onSubmit={handleSave}>
               <label className="field">
                 <span>Fornavn</span>
                 <input type="text" value={form.firstName} onChange={updateField('firstName')} />
