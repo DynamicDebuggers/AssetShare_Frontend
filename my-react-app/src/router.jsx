@@ -6,6 +6,7 @@ import CreateUserPage from './pages/CreateUser';
 import LoginPage from './pages/Login';
 import ListingPage from './pages/Listing';
 import ListingDetailPage from './pages/ListingDetail';
+import ListingNewPage from './pages/ListingNew';
 import MachineDetailPage from './pages/MachineDetail';
 import UserPage from './pages/User';
 import NotFoundPage from './pages/NotFound';
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'opret-bruger', element: <CreateUserPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'listings/new', element: <ListingNewPage /> },
       { path: 'listings', element: <ListingPage /> },
       { path: 'listings/:id', element: <ListingDetailPage /> },
       { path: 'machines/:id', element: <MachineDetailPage /> },

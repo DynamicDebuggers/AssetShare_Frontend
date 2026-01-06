@@ -6,7 +6,6 @@ function HomePage() {
   const [listings, setListings] = useState([]);
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
-  const [query, setQuery] = useState('');
 
   const formattedListings = useMemo(() => {
     return listings.map((listing) => ({
@@ -17,20 +16,6 @@ function HomePage() {
       location: listing.location || listing.Location || '—',
     }));
   }, [listings]);
-
-  const filteredListings = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    if (!term) return formattedListings;
-    return formattedListings.filter((listing) => {
-      return (
-        String(listing.id).toLowerCase().includes(term) ||
-        listing.title.toLowerCase().includes(term) ||
-        listing.description.toLowerCase().includes(term) ||
-        listing.location.toLowerCase().includes(term) ||
-        String(listing.price ?? '').toLowerCase().includes(term)
-      );
-    });
-  }, [formattedListings, query]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -62,28 +47,8 @@ function HomePage() {
         <p className="eyebrow">Oversigt</p>
         <h1>Tilgængelige maskiner</h1>
         <p className="lede">
-          Find maskiner til leje og klik dig ind for at se flere detaljer.
+          Her finder du maskiner til leje og kan sammenligne annoncer fra udlejere.
         </p>
-        <div className="search-bar">
-          <label className="field">
-            <span>Søg efter en maskine</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Søg efter titel, sted eller pris"
-              autoComplete="off"
-            />
-          </label>
-          <span className="muted">
-            Viser {filteredListings.length} ud af {formattedListings.length} maskiner
-          </span>
-        </div>
-        <div style={{ marginTop: '1rem' }}>
-          <Link to="/listings" className="button">
-            Administrer annoncer
-          </Link>
-        </div>
       </header>
 
       {status === 'loading' && <p className="callout">Henter maskiner...</p>}
@@ -95,14 +60,14 @@ function HomePage() {
       )}
 
       <div className="listing-grid">
-        {filteredListings.length === 0 && status === 'success' && (
+        {formattedListings.length === 0 && status === 'success' && (
           <div className="panel">
             <h2>Ingen maskiner fundet</h2>
             <p className="muted">Prøv at justere søgningen eller opret en maskine.</p>
           </div>
         )}
 
-        {filteredListings.map((listing) => {
+        {formattedListings.map((listing) => {
           const cardContent = (
             <>
               <div className="panel__header">
