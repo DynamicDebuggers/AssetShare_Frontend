@@ -13,6 +13,7 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(Boolean(getStoredToken()));
   const navigate = useNavigate();
   const location = useLocation();
+  const isListingsRoute = location.pathname.startsWith('/listings');
 
   useEffect(() => {
     if (isStoredTokenExpired()) {
@@ -98,12 +99,21 @@ function App() {
             Forside
           </NavLink>
           {loggedIn ? (
-            <NavLink
-              className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}
-              to="/listings"
-            >
-              Se annoncer
-            </NavLink>
+            <>
+              <NavLink
+                className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}
+                to="/listings"
+                end
+              >
+                Se annoncer
+              </NavLink>
+              <NavLink
+                className={({ isActive }) => `nav__link${isActive ? ' active' : ''}`}
+                to="/listings/new"
+              >
+                Opret annonce
+              </NavLink>
+            </>
           ) : null}
         </nav>
 
@@ -137,7 +147,7 @@ function App() {
       </aside>
 
       <div className="main-area">
-        <main className="content">
+        <main className={`content${isListingsRoute ? ' content--listings' : ''}`}>
           <Outlet />
         </main>
 
