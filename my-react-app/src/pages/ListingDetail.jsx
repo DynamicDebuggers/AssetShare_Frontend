@@ -33,6 +33,11 @@ function ListingDetailPage() {
         return;
       }
 
+      // Rens listing ID ved at tage alt før ":"
+      if (data && data.id) {
+        data.id = parseInt(String(data.id).split(':')[0]);
+      }
+
       setListing(data);
       setStatus('success');
     }
@@ -178,11 +183,11 @@ function ListingDetailPage() {
           </form>
 
           {/* Reviews Section */}
-          <ReviewList listingId={listing.id} key={refreshReviews} />
+          <ReviewList listingId={Number(listing.id)} key={refreshReviews} />
           
           {userId && (
             <ReviewForm 
-              listingId={listing.id} 
+              listingId={Number(listing.id)} 
               userId={userId}
               onReviewCreated={handleReviewCreated}
             />
