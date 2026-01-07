@@ -400,7 +400,7 @@ function ListingPage() {
               <div>
                 <p className="meta-label">Pris</p>
                 <p className="meta-value pill pill--muted">
-                  {listing.price ? `$${Number(listing.price).toLocaleString()}` : '—'}
+                  {listing.price ? `${Number(listing.price).toLocaleString()} kr` : '—'}
                 </p>
               </div>
             </div>

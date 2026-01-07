@@ -1,22 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createResource, getStoredUserId } from '../api/client';
+import { createResource, getStoredUserId, listResource } from '../api/client';
 
 const INITIAL_FORM = {
   title: '',
   description: '',
   price: '',
   location: '',
-  machineId: '',
 };
 
-function buildPayload(form, userId) {
+function buildPayload(form, userId, nextMachineId) {
   return Object.entries({
     title: form.title.trim(),
     description: form.description.trim(),
     price: form.price ? Number(form.price) : 0,
     location: form.location.trim(),
-    machineId: form.machineId ? Number(form.machineId) : undefined,
+    machineId: nextMachineId,
     userId,
   }).reduce((payload, [key, value]) => {
     if (value !== undefined && value !== '') {
@@ -30,7 +29,26 @@ function ListingNewPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [nextMachineId, setNextMachineId] = useState(null);
+  const [loadingMachineId, setLoadingMachineId] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function fetchNextMachineId() {
+      setLoadingMachineId(true);
+      const { data } = await listResource('Listing');
+      
+      if (data && Array.isArray(data) && data.length > 0) {
+        const maxId = Math.max(...data.map(listing => listing.machineId || listing.MachineId || 0));
+        setNextMachineId(maxId + 1);
+      } else {
+        setNextMachineId(1);
+      }
+      setLoadingMachineId(false);
+    }
+    
+    fetchNextMachineId();
+  }, []);
 
   const hasRequiredFields = Boolean(form.title.trim() && form.description.trim());
 
@@ -54,10 +72,15 @@ function ListingNewPage() {
       return;
     }
 
+    if (nextMachineId === null) {
+      setResult({ error: { message: 'Henter maskine ID...' } });
+      return;
+    }
+
     setSubmitting(true);
     setResult(null);
 
-    const payload = buildPayload(form, userId);
+    const payload = buildPayload(form, userId, nextMachineId);
     const { data, error } = await createResource('Listing', payload);
     if (error) {
       setResult({ error });
@@ -68,6 +91,8 @@ function ListingNewPage() {
     setResult({ data });
     setForm(INITIAL_FORM);
     setSubmitting(false);
+    // Increment for next use
+    setNextMachineId(nextMachineId + 1);
     navigate('/listings');
   }
 
@@ -80,6 +105,10 @@ function ListingNewPage() {
 
       <div className="panel-grid">
         <div className="panel">
+          {loadingMachineId && (
+            <div className="callout">Henter næste maskine ID...</div>
+          )}
+          
           <form className="field" onSubmit={handleSubmit}>
             <label className="field">
               <span>Titel *</span>
@@ -101,12 +130,8 @@ function ListingNewPage() {
               <span>Sted</span>
               <input type="text" value={form.location} onChange={updateField('location')} />
             </label>
-            <label className="field">
-              <span>Maskine ID</span>
-              <input type="number" value={form.machineId} onChange={updateField('machineId')} />
-            </label>
 
-            <button className="button" type="submit" disabled={!hasRequiredFields || submitting}>
+            <button className="button" type="submit" disabled={!hasRequiredFields || submitting || loadingMachineId}>
               {submitting ? 'Opretter...' : 'Opret annonce'}
             </button>
           </form>
