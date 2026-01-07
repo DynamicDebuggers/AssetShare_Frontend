@@ -332,7 +332,12 @@ select option {
 
 .table--bookings .table__head,
 .table--bookings .table__row {
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr auto;
+}
+
+.table--listings .table__head,
+.table--listings .table__row {
+  grid-template-columns: 2fr 1fr 1fr auto;
 }
 
 .table__head {

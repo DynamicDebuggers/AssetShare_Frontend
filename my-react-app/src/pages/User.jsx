@@ -55,6 +55,47 @@ function formatBookingStatus(value) {
   return '-';
 }
 
+function isStatusActive(value) {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase().trim();
+    if (!normalized) return false;
+    return ['true', 'active', 'open', 'booked', 'confirmed', 'yes', 'ja'].includes(normalized);
+  }
+  return false;
+}
+
+function toLocalInputValue(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function toIsoString(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function formatPrice(value) {
+  if (value === null || value === undefined || value === '') return '-';
+  const numberValue = Number(value);
+  if (Number.isNaN(numberValue)) return String(value);
+  return `${numberValue.toLocaleString()} kr.`;
+}
+
+function getListingId(listing) {
+  return listing?.id ?? listing?.listingId ?? listing?.ListingId ?? listing?.ID ?? null;
+}
+
+function getBookingId(booking) {
+  return booking?.id ?? booking?.bookingId ?? booking?.BookingId ?? booking?.ID ?? null;
+}
+
 function UserPage() {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
@@ -69,6 +110,29 @@ function UserPage() {
   const [bookings, setBookings] = useState([]);
   const [bookingStatus, setBookingStatus] = useState('idle');
   const [bookingError, setBookingError] = useState(null);
+  const [bookingEditingId, setBookingEditingId] = useState(null);
+  const [bookingForm, setBookingForm] = useState({
+    period: '',
+    status: true,
+    bookedMachineId: '',
+    rentedByUserId: '',
+  });
+  const [bookingSaving, setBookingSaving] = useState(false);
+  const [bookingDeletingId, setBookingDeletingId] = useState(null);
+  const [bookingActionError, setBookingActionError] = useState(null);
+  const [listings, setListings] = useState([]);
+  const [listingStatus, setListingStatus] = useState('idle');
+  const [listingError, setListingError] = useState(null);
+  const [listingEditingId, setListingEditingId] = useState(null);
+  const [listingForm, setListingForm] = useState({
+    title: '',
+    description: '',
+    price: '',
+    location: '',
+  });
+  const [listingSaving, setListingSaving] = useState(false);
+  const [listingDeletingId, setListingDeletingId] = useState(null);
+  const [listingActionError, setListingActionError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -155,6 +219,259 @@ function UserPage() {
     loadBookings();
     return () => controller.abort();
   }, [userId]);
+
+  function updateBookingField(field) {
+    return (event) => {
+      const value = field === 'status' ? event.target.checked : event.target.value;
+      setBookingForm((prev) => ({ ...prev, [field]: value }));
+    };
+  }
+
+  function startBookingEdit(booking) {
+    const bookingId = getBookingId(booking);
+    if (!bookingId) return;
+    const periodValue =
+      booking?.period ??
+      booking?.Period ??
+      booking?.startDate ??
+      booking?.StartDate ??
+      booking?.startTime ??
+      booking?.StartTime ??
+      null;
+    const machineValue =
+      booking?.bookedMachineId ??
+      booking?.BookedMachineId ??
+      booking?.bookedMachineID ??
+      booking?.machineId ??
+      booking?.MachineId ??
+      booking?.MachineID ??
+      '';
+    const renterValue =
+      booking?.rentedByUserId ??
+      booking?.RentedByUserId ??
+      booking?.userId ??
+      booking?.UserId ??
+      userId ??
+      '';
+    const statusValue =
+      booking?.status ??
+      booking?.Status ??
+      booking?.isActive ??
+      booking?.active ??
+      false;
+
+    setBookingEditingId(bookingId);
+    setBookingForm({
+      period: toLocalInputValue(periodValue),
+      status: isStatusActive(statusValue),
+      bookedMachineId: machineValue ?? '',
+      rentedByUserId: renterValue ?? '',
+    });
+    setBookingActionError(null);
+  }
+
+  function cancelBookingEdit() {
+    setBookingEditingId(null);
+    setBookingForm({
+      period: '',
+      status: true,
+      bookedMachineId: '',
+      rentedByUserId: '',
+    });
+    setBookingActionError(null);
+  }
+
+  async function handleBookingSave(event) {
+    event.preventDefault();
+    if (!bookingEditingId) return;
+
+    const periodIso = toIsoString(bookingForm.period);
+    if (!periodIso) {
+      setBookingActionError({ message: 'Vaelg et gyldigt tidspunkt.' });
+      return;
+    }
+
+    setBookingSaving(true);
+    setBookingActionError(null);
+
+    const payload = {
+      id: bookingEditingId,
+      rentedByUserId: bookingForm.rentedByUserId ? Number(bookingForm.rentedByUserId) : userId,
+      bookedMachineId: bookingForm.bookedMachineId ? Number(bookingForm.bookedMachineId) : null,
+      period: periodIso,
+      status: Boolean(bookingForm.status),
+    };
+
+    const { data, error: updateError } = await updateResource('Booking', bookingEditingId, payload);
+    if (updateError) {
+      setBookingActionError(updateError);
+      setBookingSaving(false);
+      return;
+    }
+
+    const nextData = data && typeof data === 'object' ? data : payload;
+    setBookings((prev) =>
+      prev.map((booking) =>
+        Number(getBookingId(booking)) === Number(bookingEditingId)
+          ? { ...booking, ...nextData }
+          : booking
+      )
+    );
+    setBookingSaving(false);
+    setBookingEditingId(null);
+  }
+
+  async function handleBookingDelete(bookingId) {
+    if (!bookingId || bookingDeletingId) return;
+    const confirmed = confirm('Er du sikker paa, at du vil slette bookingen?');
+    if (!confirmed) return;
+
+    setBookingDeletingId(bookingId);
+    setBookingActionError(null);
+
+    const { error: deleteError } = await deleteResource('Booking', bookingId);
+    if (deleteError) {
+      setBookingActionError(deleteError);
+      setBookingDeletingId(null);
+      return;
+    }
+
+    setBookings((prev) =>
+      prev.filter((booking) => Number(getBookingId(booking)) !== Number(bookingId))
+    );
+    if (Number(bookingEditingId) === Number(bookingId)) {
+      cancelBookingEdit();
+    }
+    setBookingDeletingId(null);
+  }
+
+  useEffect(() => {
+    if (!userId) return;
+    const controller = new AbortController();
+
+    async function loadListings() {
+      setListingStatus('loading');
+      setListingError(null);
+
+      const { data, error: requestError } = await listResource('Listing', controller.signal);
+      if (requestError) {
+        if (requestError.aborted) {
+          setListingStatus('idle');
+          return;
+        }
+        setListingError(requestError);
+        setListings([]);
+        setListingStatus('error');
+        return;
+      }
+
+      const allListings = Array.isArray(data) ? data : [];
+      const filtered = allListings.filter((listing) => {
+        const listingUserId =
+          listing?.userId ??
+          listing?.UserId ??
+          listing?.ownerId ??
+          listing?.OwnerId ??
+          listing?.createdByUserId ??
+          listing?.CreatedByUserId ??
+          null;
+        if (listingUserId === null || listingUserId === undefined) return false;
+        return Number(listingUserId) === Number(userId);
+      });
+
+      setListings(filtered);
+      setListingStatus('success');
+    }
+
+    loadListings();
+    return () => controller.abort();
+  }, [userId]);
+
+  function updateListingField(field) {
+    return (event) => {
+      setListingForm((prev) => ({ ...prev, [field]: event.target.value }));
+    };
+  }
+
+  function startListingEdit(listing) {
+    const listingId = getListingId(listing);
+    if (!listingId) return;
+    setListingEditingId(listingId);
+    setListingForm({
+      title: listing?.title || listing?.Title || '',
+      description: listing?.description || listing?.Description || '',
+      price: listing?.price ?? listing?.Price ?? '',
+      location: listing?.location || listing?.Location || '',
+    });
+    setListingActionError(null);
+  }
+
+  function cancelListingEdit() {
+    setListingEditingId(null);
+    setListingForm({
+      title: '',
+      description: '',
+      price: '',
+      location: '',
+    });
+    setListingActionError(null);
+  }
+
+  async function handleListingSave(event) {
+    event.preventDefault();
+    if (!listingEditingId) return;
+    setListingSaving(true);
+    setListingActionError(null);
+
+    const payload = {
+      title: listingForm.title.trim(),
+      description: listingForm.description.trim(),
+      price: listingForm.price === '' ? 0 : Number(listingForm.price),
+      location: listingForm.location.trim(),
+    };
+
+    const { data, error: updateError } = await updateResource('Listing', listingEditingId, payload);
+    if (updateError) {
+      setListingActionError(updateError);
+      setListingSaving(false);
+      return;
+    }
+
+    const nextData = data && typeof data === 'object' ? data : payload;
+    setListings((prev) =>
+      prev.map((listing) =>
+        Number(getListingId(listing)) === Number(listingEditingId)
+          ? { ...listing, ...nextData }
+          : listing
+      )
+    );
+    setListingSaving(false);
+    setListingEditingId(null);
+  }
+
+  async function handleListingDelete(listingId) {
+    if (!listingId || listingDeletingId) return;
+    const confirmed = confirm('Er du sikker paa, at du vil slette annoncen?');
+    if (!confirmed) return;
+
+    setListingDeletingId(listingId);
+    setListingActionError(null);
+
+    const { error: deleteError } = await deleteResource('Listing', listingId);
+    if (deleteError) {
+      setListingActionError(deleteError);
+      setListingDeletingId(null);
+      return;
+    }
+
+    setListings((prev) =>
+      prev.filter((listing) => Number(getListingId(listing)) !== Number(listingId))
+    );
+    if (Number(listingEditingId) === Number(listingId)) {
+      cancelListingEdit();
+    }
+    setListingDeletingId(null);
+  }
 
   function updateField(field) {
     return (event) => {
@@ -283,6 +600,7 @@ function UserPage() {
                 <span>Periode</span>
                 <span>Maskine</span>
                 <span>Status</span>
+                <span>Handlinger</span>
               </div>
               <div className="table__body">
                 {bookings.map((booking, index) => {
@@ -308,22 +626,215 @@ function UserPage() {
                     booking?.isActive ??
                     booking?.active ??
                     null;
-                  const bookingKey =
-                    booking?.id ??
-                    booking?.bookingId ??
-                    booking?.BookingId ??
-                    `${machine ?? 'booking'}-${index}`;
+                  const bookingId = getBookingId(booking);
+                  const bookingKey = bookingId ?? `${machine ?? 'booking'}-${index}`;
 
                   return (
                     <div className="table__row" key={bookingKey}>
                       <span>{formatBookingPeriod(period)}</span>
                       <span>{machine ?? '-'}</span>
                       <span className="pill">{formatBookingStatus(statusValue)}</span>
+                      <span>
+                        {bookingId ? (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              className="button button--small"
+                              type="button"
+                              onClick={() => startBookingEdit(booking)}
+                            >
+                              Rediger
+                            </button>
+                            <button
+                              className="button button--small button--danger"
+                              type="button"
+                              onClick={() => handleBookingDelete(bookingId)}
+                              disabled={bookingDeletingId === bookingId}
+                            >
+                              {bookingDeletingId === bookingId ? 'Sletter...' : 'Slet'}
+                            </button>
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </span>
                     </div>
                   );
                 })}
               </div>
             </div>
+          ) : null}
+
+          {bookingActionError ? (
+            <div className="callout callout--warning" style={{ marginTop: '0.75rem' }}>
+              <strong>Fejl:</strong> {bookingActionError.message}
+              {bookingActionError.status ? ` (HTTP ${bookingActionError.status})` : ''}
+            </div>
+          ) : null}
+
+          {bookingEditingId ? (
+            <form className="field" onSubmit={handleBookingSave} style={{ marginTop: '1rem' }}>
+              <div className="form-grid">
+                <label className="field">
+                  <span>Periode</span>
+                  <input
+                    type="datetime-local"
+                    value={bookingForm.period}
+                    onChange={updateBookingField('period')}
+                  />
+                </label>
+                <label className="field">
+                  <span>Maskine ID</span>
+                  <input
+                    type="number"
+                    value={bookingForm.bookedMachineId}
+                    onChange={updateBookingField('bookedMachineId')}
+                  />
+                </label>
+                <label className="field" style={{ alignItems: 'flex-start' }}>
+                  <span>Aktiv</span>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(bookingForm.status)}
+                    onChange={updateBookingField('status')}
+                  />
+                </label>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <button className="button" type="submit" disabled={bookingSaving}>
+                  {bookingSaving ? 'Gemmer...' : 'Gem'}
+                </button>
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  onClick={cancelBookingEdit}
+                >
+                  Annuller
+                </button>
+              </div>
+            </form>
+          ) : null}
+        </div>
+
+        <div className="panel">
+          <div className="panel__header">
+            <strong>Dine annoncer</strong>
+          </div>
+
+          {listingStatus === 'loading' && <p className="muted">Henter annoncer...</p>}
+          {listingError ? (
+            <div className="callout callout--warning">
+              <strong>Fejl:</strong> {listingError.message}
+              {listingError.status ? ` (HTTP ${listingError.status})` : ''}
+            </div>
+          ) : null}
+
+          {listingStatus === 'success' && listings.length === 0 ? (
+            <p className="muted">Ingen annoncer fundet.</p>
+          ) : null}
+
+          {listings.length > 0 ? (
+            <div className="table table--listings">
+              <div className="table__head">
+                <span>Titel</span>
+                <span>Pris</span>
+                <span>Sted</span>
+                <span>Handlinger</span>
+              </div>
+              <div className="table__body">
+                {listings.map((listing, index) => {
+                  const listingId = getListingId(listing);
+                  const listingKey = listingId ?? `${index}-${listing?.title}`;
+                  const title = listing?.title || listing?.Title || 'Untitled';
+                  const price = listing?.price ?? listing?.Price ?? null;
+                  const location = listing?.location || listing?.Location || '-';
+
+                  return (
+                    <div className="table__row" key={listingKey}>
+                      <span>{title}</span>
+                      <span>{formatPrice(price)}</span>
+                      <span>{location}</span>
+                      <span>
+                        {listingId ? (
+                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button
+                              className="button button--small"
+                              type="button"
+                              onClick={() => startListingEdit(listing)}
+                            >
+                              Rediger
+                            </button>
+                            <button
+                              className="button button--small button--danger"
+                              type="button"
+                              onClick={() => handleListingDelete(listingId)}
+                              disabled={listingDeletingId === listingId}
+                            >
+                              {listingDeletingId === listingId ? 'Sletter...' : 'Slet'}
+                            </button>
+                          </div>
+                        ) : (
+                          '-'
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {listingActionError ? (
+            <div className="callout callout--warning" style={{ marginTop: '0.75rem' }}>
+              <strong>Fejl:</strong> {listingActionError.message}
+              {listingActionError.status ? ` (HTTP ${listingActionError.status})` : ''}
+            </div>
+          ) : null}
+
+          {listingEditingId ? (
+            <form className="field" onSubmit={handleListingSave} style={{ marginTop: '1rem' }}>
+              <div className="form-grid">
+                <label className="field">
+                  <span>Titel</span>
+                  <input type="text" value={listingForm.title} onChange={updateListingField('title')} />
+                </label>
+                <label className="field">
+                  <span>Pris</span>
+                  <input
+                    type="number"
+                    value={listingForm.price}
+                    onChange={updateListingField('price')}
+                  />
+                </label>
+                <label className="field">
+                  <span>Sted</span>
+                  <input
+                    type="text"
+                    value={listingForm.location}
+                    onChange={updateListingField('location')}
+                  />
+                </label>
+              </div>
+              <label className="field" style={{ marginTop: '0.75rem' }}>
+                <span>Beskrivelse</span>
+                <textarea
+                  rows="4"
+                  value={listingForm.description}
+                  onChange={updateListingField('description')}
+                />
+              </label>
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
+                <button className="button" type="submit" disabled={listingSaving}>
+                  {listingSaving ? 'Gemmer...' : 'Gem'}
+                </button>
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  onClick={cancelListingEdit}
+                >
+                  Annuller
+                </button>
+              </div>
+            </form>
           ) : null}
         </div>
 
