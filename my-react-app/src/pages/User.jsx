@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getResource, getStoredUserId, updateResource } from '../api/client';
+import { getResource, getStoredUserId, updateResource, listResource } from '../api/client';
 
 const INITIAL_FORM = {
   firstName: '',
@@ -35,6 +35,7 @@ function UserPage() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [myMachines, setMyMachines] = useState([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -73,6 +74,12 @@ function UserPage() {
       setProfile(mergedProfile);
       setForm(mapFormFromProfile(mergedProfile));
       setStatus('success');
+
+      // Hent brugerens maskiner
+      const { data: machines } = await listResource('machine');
+      if (machines && Array.isArray(machines)) {
+        setMyMachines(machines.filter(m => m.userId === currentUserId));
+      }
     }
 
     loadProfile();
@@ -151,6 +158,20 @@ function UserPage() {
               {editing ? 'Annuller' : 'Rediger profil'}
             </button>
           </div>
+
+          {/* Mine maskiner */}
+          {myMachines.length > 0 && (
+            <div className="panel">
+              <div className="panel__header"><strong>Mine maskiner</strong></div>
+              <ul>
+                {myMachines.map(m => (
+                  <li key={m.id}>
+                    {m.title}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {editing ? (
             <form className="panel field" onSubmit={handleSave}>
