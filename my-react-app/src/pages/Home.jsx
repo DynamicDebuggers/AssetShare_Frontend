@@ -120,3 +120,11 @@ function HomePage() {
 }
 
 export default HomePage;
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Hvad gør de importerede ressourcer?
+// - Hvad gør funktionerne?
+// - Hvorfor returnerer man siden?

@@ -207,3 +207,12 @@ function UserPage() {
 }
 
 export default UserPage;
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Hvad gør de importerede klasser?
+// - Hvorfor sætter man konstanter?
+// - Hvad gør hver funktion?
+// - Hvad gør den returnerede side?

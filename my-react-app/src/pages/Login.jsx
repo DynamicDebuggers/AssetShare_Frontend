@@ -101,3 +101,12 @@ function LoginPage() {
 }
 
 export default LoginPage;
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Hvad gør de importerede ressourcer?
+// - Hvad gør const INITIAL_FORM?
+// - Hvad gør funktionerne?
+// - Hvorfor returnerer man siden?

@@ -1,7 +1,11 @@
-const DEFAULT_API_BASE_URL =
-  'https://assetshareapi-a8c6f5abbfg9ftbw.northeurope-01.azurewebsites.net/api';
+// Her deifnerer vi vores URL til vores API i Azure
+const DEFAULT_API_BASE_URL = 'https://assetshareapi-a8c6f5abbfg9ftbw.northeurope-01.azurewebsites.net/api';
 
+// Her sikrer vi at man både kan bruge localhost URL og Azure URL 
+// replace(/\/$/, '') sikrer at en skråstreg i URL bliver fjernet
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '');
+
+// Her sætter vi konstanter til en JWT token og Id til den bruger som er logget ind
 const AUTH_TOKEN_STORAGE_KEY = 'assetshare_auth_token';
 const AUTH_USER_ID_STORAGE_KEY = 'assetshare_user_id';
 
@@ -284,3 +288,11 @@ export async function logoutUser() {
     return { error: toApiError(error) };
   }
 }
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Koden
+// - Beskriv koden
+// - Refaktorer hvis nødvendigt

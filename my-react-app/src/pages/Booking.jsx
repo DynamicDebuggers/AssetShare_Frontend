@@ -11,3 +11,13 @@ function BookingPage() {
 }
 
 export default BookingPage;
+
+
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Hvad gør ResourceConsole?
+// - Hvad betyder resourceName, title og description
+// - Hvad gør funtion i en React jsx page

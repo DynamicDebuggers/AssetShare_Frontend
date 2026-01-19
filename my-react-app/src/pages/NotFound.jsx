@@ -13,3 +13,10 @@ function NotFoundPage() {
 }
 
 export default NotFoundPage;
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Hvad gør import?
+// - Hvad gør funktionen

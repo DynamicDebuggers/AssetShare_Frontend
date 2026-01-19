@@ -136,3 +136,12 @@ function CreateUserPage() {
 }
 
 export default CreateUserPage;
+
+
+// Mads Refaktorering
+
+// Hvad jeg skal undersøge:
+// - Hvad gør de importerede ressourcer?
+// - Hvad gør const INITIAL_FORM?
+// - Hvad gør funktionerne?
+// - Hvorfor returnerer man siden?
