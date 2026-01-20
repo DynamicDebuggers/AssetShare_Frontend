@@ -58,6 +58,7 @@ function ListingNewPage() {
     };
   }
 
+
   async function handleSubmit(event) {
     event.preventDefault();
     const userId = getStoredUserId();
@@ -80,15 +81,38 @@ function ListingNewPage() {
     setSubmitting(true);
     setResult(null);
 
-    const payload = buildPayload(form, userId, nextMachineId);
-    const { data, error } = await createResource('Listing', payload);
-    if (error) {
-      setResult({ error });
+    // Først: Opret maskine
+    const machinePayload = {
+      userId,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      price: form.price ? Number(form.price) : 0,
+      location: form.location.trim(),
+    };
+    const { data: machine, error: machineError } = await createResource('machine', machinePayload);
+    if (machineError) {
+      setResult({ error: machineError });
       setSubmitting(false);
       return;
     }
 
-    setResult({ data });
+    // Dernæst: Opret annonce med maskinens id
+    const listingPayload = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      price: form.price ? Number(form.price) : 0,
+      location: form.location.trim(),
+      machineId: machine.id || machine.Id,
+      userId,
+    };
+    const { data: listing, error: listingError } = await createResource('Listing', listingPayload);
+    if (listingError) {
+      setResult({ error: listingError });
+      setSubmitting(false);
+      return;
+    }
+
+    setResult({ data: listing });
     setForm(INITIAL_FORM);
     setSubmitting(false);
     // Increment for next use
@@ -136,10 +160,14 @@ function ListingNewPage() {
             </button>
           </form>
 
+
           {result?.error ? (
             <div className="callout callout--warning">
               <strong>Fejl:</strong> {result.error.message}
               {result.error.status ? ` (HTTP ${result.error.status})` : ''}
+              {result.error.details ? (
+                <pre style={{ whiteSpace: 'pre-wrap', color: 'crimson', marginTop: 8 }}>{JSON.stringify(result.error.details, null, 2)}</pre>
+              ) : null}
             </div>
           ) : null}
 
