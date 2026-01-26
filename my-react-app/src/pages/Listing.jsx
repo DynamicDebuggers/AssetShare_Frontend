@@ -1,35 +1,63 @@
+// Importerer React hooks til state, sideeffekter og memoization
 import { useEffect, useMemo, useState } from 'react';
+// Importerer Link og useNavigate fra React Router til navigation
 import { Link, useNavigate } from 'react-router-dom';
+// Importerer API-funktioner til at hente, opdatere og slette annoncer
 import { listResource, updateResource, deleteResource } from '../api/client';
 
+// Denne fil viser alle annoncer (listings) og giver mulighed for at søge, filtrere, redigere og slette
+// Alle centrale linjer og blokke er kommenteret på dansk for at gøre koden let at forstå
+// Kommentarer forklarer både React hooks, logik, UI og API-kald
+// Hvis du er ny til React, kan du læse kommentarerne linje for linje for at forstå hvad der sker
+// Komponent der viser en oversigt over alle annoncer (listings)
 function ListingPage() {
+  // State til at holde alle annoncer
   const [listings, setListings] = useState([]);
+  // State til at holde status for indlæsning (idle, loading, success, error)
   const [status, setStatus] = useState('idle');
+  // State til fejlbesked hvis noget går galt
   const [error, setError] = useState(null);
+  // --- STATE VARIABLER ---
+  // Her defineres alle de variabler, der holder styr på data og UI-tilstand
+  // State til at holde den valgte annonce (til redigering)
   const [selectedListing, setSelectedListing] = useState(null);
+  // State til at holde hvilken tilstand vi er i (list eller edit)
   const [mode, setMode] = useState('list');
+  // State til søgefeltet
   const [query, setQuery] = useState('');
+  // State til filter for minimumspris
   const [priceMin, setPriceMin] = useState('');
+  // State til filter for maksimumspris
   const [priceMax, setPriceMax] = useState('');
+  // State til filter for maksimal afstand
   const [maxDistanceKm, setMaxDistanceKm] = useState('');
+  // State til filter for kun at vise udlejede annoncer
   const [rentedOnly, setRentedOnly] = useState(false);
-  
+
+  // State til formularen til redigering
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
   });
+  // State til status for formularen (idle, loading, success, error)
   const [formStatus, setFormStatus] = useState('idle');
+  // State til fejlbesked for formularen
   const [formError, setFormError] = useState(null);
+  // Hook til navigation
   const navigate = useNavigate();
 
+  // Udregner de filtrerede annoncer ud fra søgning og filtre
   const filteredListings = useMemo(() => {
+    // Gør søgeterm, pris og afstand klar
     const term = query.trim().toLowerCase();
     const minPriceValue = priceMin === '' ? null : Number(priceMin);
     const maxPriceValue = priceMax === '' ? null : Number(priceMax);
     const maxDistanceValue = maxDistanceKm === '' ? null : Number(maxDistanceKm);
 
+    // Filtrerer alle annoncer
     return listings.filter((listing) => {
+      // Udtræk relevante felter fra annoncen
       const id = String(listing.id ?? '');
       const title = String(listing.title || listing.Title || '');
       const description = String(listing.description || listing.Description || '');
@@ -38,6 +66,7 @@ function ListingPage() {
       const machineId = String(listing.machineId ?? listing.MachineId ?? '');
       const userId = String(listing.userId ?? listing.UserId ?? '');
 
+      // Tjek om annoncen matcher søgetermen
       const matchesSearch =
         !term ||
         id.toLowerCase().includes(term) ||
@@ -50,6 +79,7 @@ function ListingPage() {
 
       if (!matchesSearch) return false;
 
+      // Tjek prisfiltre
       const numericPrice =
         listing.price ?? listing.Price ?? (price ? Number(price) : null);
       const priceValue = Number.isNaN(Number(numericPrice)) ? null : Number(numericPrice);
@@ -62,6 +92,7 @@ function ListingPage() {
         return false;
       }
 
+      // Tjek afstandsfilter
       if (maxDistanceValue !== null) {
         const distanceRaw =
           listing.distanceKm ?? listing.DistanceKm ?? listing.distance ?? listing.Distance ?? null;
@@ -71,6 +102,7 @@ function ListingPage() {
         }
       }
 
+      // Tjek om kun udlejede annoncer skal vises
       if (rentedOnly) {
         const statusRaw =
           listing.status ?? listing.Status ?? listing.isRented ?? listing.rented ?? null;
@@ -90,12 +122,14 @@ function ListingPage() {
     });
   }, [listings, query, priceMin, priceMax, maxDistanceKm, rentedOnly]);
 
+  // useEffect kører når mode ændrer sig (fx fra edit til list)
   useEffect(() => {
     if (mode === 'list') {
       loadListings();
     }
   }, [mode]);
 
+  // Funktion der henter alle annoncer fra API'et
   async function loadListings() {
     setStatus('loading');
     const controller = new AbortController();
