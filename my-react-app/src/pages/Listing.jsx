@@ -387,7 +387,7 @@ function ListingPage() {
                 <p className="meta-label">Maskine</p>
                 <p className="meta-value">
                   {listing.machineId != null ? (
-                    <Link to={`/machines/${listing.machineId}`}>{listing.machineId}</Link>
+                    listing.machineId
                   ) : (
                     '—'
                   )}
